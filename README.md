@@ -1,1 +1,1 @@
-# Court-Analytic-CNN-Transformer-Approach
+# CourtAnalytic
