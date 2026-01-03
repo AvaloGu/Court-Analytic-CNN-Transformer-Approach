@@ -21,7 +21,7 @@ class CausalSelfAttention(nn.Module):
         self.n_head = config.n_head
         self.n_embd = config.n_embd
         self.dropout = config.dropout
-        # flash attention make GPU go brrrrr but support is only in PyTorch >= 2.0
+        # flash attention 
         self.flash = hasattr(torch.nn.functional, 'scaled_dot_product_attention')
         self.register_buffer("base_mask", torch.tril(torch.ones(config.block_size, config.block_size))
                                         .view(1, config.block_size, config.block_size))
@@ -35,7 +35,7 @@ class CausalSelfAttention(nn.Module):
         T, C = x.size() # sequence length, embedding dimensionality (n_embd)
 
         # calculate query, key, values for all heads in batch and move head forward to be the batch dim
-        q, k, v  = self.c_attn(x).split(self.n_embd, dim=2) # (T, C)
+        q, k, v  = self.c_attn(x).split(self.n_embd, dim=1) # (T, C)
         k = k.view(T, self.n_head, C // self.n_head).transpose(0, 1) # (nh, T, hs)
         q = q.view(T, self.n_head, C // self.n_head).transpose(0, 1) # (nh, T, hs)
         v = v.view(T, self.n_head, C // self.n_head).transpose(0, 1) # (nh, T, hs)
@@ -118,11 +118,7 @@ class GPT(nn.Module):
             ln_f = nn.LayerNorm(config.n_embd, bias=config.bias),
         ))
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
-        # with weight tying when using torch.compile() some warnings get generated:
-        # "UserWarning: functional_call was passed multiple values for tied weights.
-        # This behavior is deprecated and will be an error in future versions"
-        # not 100% sure what this is, so far seems to be harmless. TODO investigate
-        self.transformer.wte.weight = self.lm_head.weight # https://paperswithcode.com/method/weight-tying
+        self.transformer.wte.weight = self.lm_head.weight
 
         # init all weights
         self.apply(self._init_weights)
@@ -132,7 +128,7 @@ class GPT(nn.Module):
                 torch.nn.init.normal_(p, mean=0.0, std=0.02/math.sqrt(2 * config.n_layer))
 
         # report number of parameters
-        print("number of parameters: %.2fM" % (self.get_num_params()/1e6,))
+        # print("number of parameters: %.2fM" % (self.get_num_params()/1e6,))
 
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
@@ -148,7 +144,7 @@ class GPT(nn.Module):
 
         device = shots.device
         num_shots = shots.size(0)
-        num_frames, _ = enc_output.size(0)
+        num_frames = enc_output.size(0)
         t = num_frames + num_shots
         pos = torch.arange(0, t, dtype=torch.long, device=device) # shape (t)
 
@@ -163,14 +159,5 @@ class GPT(nn.Module):
 
         logits = self.lm_head(x)
         logits = logits[-num_shots:] # exclude the frame tokens
-
-        # if targets is not None:
-        #     # if we are given some desired targets also calculate the loss
-        #     logits = self.lm_head(x) # (t, vocab_size)
-        #     loss = F.cross_entropy(logits, targets, ignore_index=-1)
-        # else:
-        #     # inference-time mini-optimization: only forward the lm_head on the very last position
-        #     logits = self.lm_head(x[:, [-1], :]) # note: using list [-1] to preserve the time dim
-        #     loss = None
 
         return logits
