@@ -1,7 +1,7 @@
 import time
 from models.convnext import ConvNeXt, ConvNeXtConfig
 from models.transformer import GPTConfig
-from classifiers.classifier import FrameClassifier, ShotPredictor
+from classifiers.classifier import ShotPredictor
 import torch
 import os
 import math

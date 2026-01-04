@@ -1,6 +1,6 @@
 from models.convnext import ConvNeXt, ConvNeXtConfig
 from models.transformer import GPTConfig
-from classifiers.classifier import FrameClassifier, ShotPredictor
+from classifiers.classifier import ShotPredictor
 from loaders.dataloader import DataLoaderStage0, DataLoaderStage1, DataLoaderStage2
 import torch
 import numpy as np
