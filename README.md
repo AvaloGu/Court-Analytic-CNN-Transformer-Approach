@@ -6,4 +6,4 @@
 
 ## Reference
 - The ConvNeXt was build on the implementation from [CovNeXt](https://github.com/facebookresearch/ConvNeXt).
-- The training code took reference from [nanoGPT](https://github.com/karpathy/nanoGPT)
+- The training code and Transformer implementation took reference from [nanoGPT](https://github.com/karpathy/nanoGPT)
